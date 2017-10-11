@@ -19,6 +19,7 @@ using UnityEngine.SceneManagement;
 public class scr_GameManager : MonoBehaviour
 {
     [Header("Controls")]
+    public bool usePathFinding;
     public int gridSize = 30;
     public GameObject buttonPrefab;
     public GameObject gridPanel;
@@ -71,16 +72,10 @@ public class scr_GameManager : MonoBehaviour
 
                 int r = Random.Range(0, 100);
 
-                if (r < 75)
-                {
+                if (r < 80 || !usePathFinding)
                     grid.Add(new cls_Grid(button.name, grid.Count, button, new Vector2(i, j), enum_Contains.Empty, emptyColor));
-
-                }
                 else
-                {
                     grid.Add(new cls_Grid(button.name, grid.Count, button, new Vector2(i, j), enum_Contains.Obstackle, obstacleColor ));
-
-                }
             }
         }
 
@@ -180,6 +175,8 @@ public class scr_GameManager : MonoBehaviour
                 GameOver("You've failed to reach Steve In time. He was eaten...");
             else if (hungryButtonIndex == steveButtonIndex)
                 GameOver("You've reached Steve In time. Nice Job!");
+            else if (hungryButtonIndex == atillaButtonIndex)
+                GameOver("You were knocked unconcious by Atilla and failed to save Steve.");
         }
     }
 
@@ -218,7 +215,12 @@ public class scr_GameManager : MonoBehaviour
 
     public void MoveHungry(Vector2 _moveTo)
     {
-        int closestButtonIndex = ClosestButton(hungryButtonIndex, 1.1f, _moveTo);
+        float moveSpeed = 1.1f;
+
+        if (usePathFinding)
+            moveSpeed = 2.0f;
+
+        int closestButtonIndex = ClosestButton(hungryButtonIndex, moveSpeed, _moveTo);
 
         //Clear the old button
         SetCharacter(enum_Contains.Empty, hungryButtonIndex, emptyColor);
@@ -232,9 +234,16 @@ public class scr_GameManager : MonoBehaviour
             g.UpdateColor();
     }
 
+
     public void MoveAtilla()
     {
-        int closestButtonIndex = ClosestButton(atillaButtonIndex, 1.1f, grid[steveButtonIndex].buttonPos);
+
+        float moveSpeed = 1.1f;
+
+        if (usePathFinding)
+            moveSpeed = 2.0f;
+
+        int closestButtonIndex = ClosestButton(atillaButtonIndex, moveSpeed, grid[steveButtonIndex].buttonPos);
 
         //Clear the old atilla button
         SetCharacter(enum_Contains.Empty, atillaButtonIndex, emptyColor);
@@ -258,7 +267,7 @@ public class scr_GameManager : MonoBehaviour
         for (int i = 0; i < grid.Count; i++)
         {
             float distance = Vector2.Distance(_from, grid[i].buttonPos);
-            if (distance < _distance)
+            if (distance < _distance && grid[i].contains != enum_Contains.Obstackle)
                 buttonIndexes.Add(grid[i]);
         }
 

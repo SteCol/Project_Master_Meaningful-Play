@@ -1221,6 +1221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d44417e242b8b124c8643de18d2d59f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  usePathFinding: 1
   gridSize: 20
   buttonPrefab: {fileID: 1429139152552424, guid: 7950b0e76b3631e449edbaf413bb74af,
     type: 2}
@@ -1234,6 +1235,7 @@ MonoBehaviour:
   gameOverScreen: {fileID: 671305700}
   resultText: {fileID: 66128925}
   emptyColor: {r: 1, g: 1, b: 1, a: 1}
+  obstacleColor: {r: 0, g: 0, b: 0, a: 0}
   steveColor: {r: 0.034482718, g: 1, b: 0, a: 1}
   hungryColor: {r: 0.41911763, g: 0.41911763, b: 0.41911763, a: 1}
   atillaColor: {r: 1, g: 0, b: 0, a: 1}
