@@ -29,6 +29,8 @@ public class scr_GameManager : MonoBehaviour
     public int musicVolume;
     public IEnumerator activeCoreRoutine;
     public bool gameOver;
+    public int iteration;
+    public int nextButton;
 
     [Header("UI Stuff")]
     public GameObject gameOverScreen;
@@ -42,8 +44,8 @@ public class scr_GameManager : MonoBehaviour
     public Color atillaColor;
 
     [Header("Grid")]
-    public List<cls_Grid> grid;
-    public List<cls_Grid> mightContainSteve;
+    public List<cls_Button> grid;
+    public List<cls_Button> mightContainSteve;
 
     #region UI Button Stuff
     public void PlayRadio()
@@ -73,9 +75,9 @@ public class scr_GameManager : MonoBehaviour
                 int r = Random.Range(0, 100);
 
                 if (r < 80 || !usePathFinding)
-                    grid.Add(new cls_Grid(button.name, grid.Count, button, new Vector2(i, j), enum_Contains.Empty, emptyColor));
+                    grid.Add(new cls_Button(button.name, grid.Count, button, new Vector2(i, j), enum_Contains.Empty, emptyColor));
                 else
-                    grid.Add(new cls_Grid(button.name, grid.Count, button, new Vector2(i, j), enum_Contains.Obstackle, obstacleColor ));
+                    grid.Add(new cls_Button(button.name, grid.Count, button, new Vector2(i, j), enum_Contains.Obstackle, obstacleColor));
             }
         }
 
@@ -86,7 +88,7 @@ public class scr_GameManager : MonoBehaviour
         DrawSteveCircle(musicVolume, true);
 
         //Add onClick cause I sure as hell ain't doing that shit manually.
-        foreach (cls_Grid g in grid)
+        foreach (cls_Button g in grid)
         {
             g.button.GetComponent<Button>().onClick.AddListener(g.OnButtonClick);
             g.UpdateColor();
@@ -118,7 +120,7 @@ public class scr_GameManager : MonoBehaviour
 
 
         //Get the buttons to color
-        foreach (cls_Grid g in grid)
+        foreach (cls_Button g in grid)
         {
             float distance = Vector2.Distance(grid[possibleSteveButtonIndex].buttonPos, g.buttonPos);
             if (distance < _size && g.contains == enum_Contains.Empty)
@@ -133,18 +135,17 @@ public class scr_GameManager : MonoBehaviour
 
     void ReduceCircle()
     {
-        foreach (cls_Grid g in mightContainSteve)
+        foreach (cls_Button g in mightContainSteve)
         {
             g.buttonColor = emptyColor;
             g.UpdateColor();
-
         }
         musicVolume--;
 
         mightContainSteve.Clear();
         DrawSteveCircle(musicVolume, false);
 
-        foreach (cls_Grid g in mightContainSteve)
+        foreach (cls_Button g in mightContainSteve)
         {
             g.buttonColor = steveColor;
             g.UpdateColor();
@@ -192,14 +193,14 @@ public class scr_GameManager : MonoBehaviour
     public int ClosestButton(int _index, float _distance, Vector2 _moveTo)
     {
         //Make a list of possible points to move to
-        List<cls_Grid> buttonsInRange = GetInRange(grid[_index].buttonPos, _distance);
+        List<cls_Button> buttonsInRange = GetInRange(grid[_index].buttonPos, _distance);
 
         //Set up a "furthest away point"
         float closestDistance = 1000.0f;
-        cls_Grid closestButton = grid[_index];
+        cls_Button closestButton = grid[_index];
 
         //Get the closest button
-        foreach (cls_Grid g in buttonsInRange)
+        foreach (cls_Button g in buttonsInRange)
         {
             float distance = Vector2.Distance(_moveTo, g.buttonPos);
             if (distance < closestDistance)
@@ -230,20 +231,76 @@ public class scr_GameManager : MonoBehaviour
         hungryButtonIndex = closestButtonIndex;
 
         //Redraw the grid colors
-        foreach (cls_Grid g in grid)
+        foreach (cls_Button g in grid)
             g.UpdateColor();
     }
 
+    //Actual pathfinding a*
+    void PathFidning(int _index, float _distance, Vector2 _target)
+    {
+        int nextButtonIndex = 0;
+
+        //Reset all the stuff
+        foreach (cls_Button g in grid)
+            g.pathWeight = 0.0f;
+
+        //Prepare first iteration
+        List<cls_Button> buttonsInRange = GetInRange(grid[_index].buttonPos, _distance);
+
+        for (int i = 0; i < buttonsInRange.Count; i++)
+        {
+
+        }
+    }
+
+    public List<cls_Button> FindPath(cls_Button _destination, int _iteration)
+    {
+        //Make a new list of buttons
+        List<cls_Button> path = new List<cls_Button>();
+
+        //Set the last button
+        cls_Button button = _destination;
+
+        //Get the next button and make this one it's parent
+        List<cls_Button> buttonsInRange = GetInRange(_destination.buttonPos, 1.1f);
+
+        foreach (cls_Button b in buttonsInRange)
+        {
+            path.Add(button);
+            b.parentButton = button;
+        }
+
+        //Make it backwards
+        path.Reverse();
+
+        return path;
+    }
+
+    public void SetWeight(int _index)
+    {
+
+    }
 
     public void MoveAtilla()
     {
+        //PathFidning(atillaButtonIndex, 1.1f, grid[steveButtonIndex].buttonPos);
+
+        //int nextButtonIndex = 0;
 
         float moveSpeed = 1.1f;
 
-        if (usePathFinding)
-            moveSpeed = 2.0f;
+        //if (usePathFinding)
+        //    moveSpeed = 2.0f;
 
-        int closestButtonIndex = ClosestButton(atillaButtonIndex, moveSpeed, grid[steveButtonIndex].buttonPos);
+        int closestButtonIndex = 0;
+
+        if (usePathFinding)
+        {
+            print(FindPath(grid[steveButtonIndex]).Count);
+            closestButtonIndex = FindPath(grid[steveButtonIndex])[1].index;
+        }
+        else
+            closestButtonIndex = ClosestButton(atillaButtonIndex, moveSpeed, grid[steveButtonIndex].buttonPos);
 
         //Clear the old atilla button
         SetCharacter(enum_Contains.Empty, atillaButtonIndex, emptyColor);
@@ -253,16 +310,16 @@ public class scr_GameManager : MonoBehaviour
         atillaButtonIndex = closestButtonIndex;
 
         //Redraw the grid colors
-        foreach (cls_Grid g in grid)
+        foreach (cls_Button g in grid)
             g.UpdateColor();
     }
     #endregion
 
     #region Calculation stuff
     //Returns a list of the closest by buttons
-    List<cls_Grid> GetInRange(Vector2 _from, float _distance)
+    List<cls_Button> GetInRange(Vector2 _from, float _distance)
     {
-        List<cls_Grid> buttonIndexes = new List<cls_Grid>();
+        List<cls_Button> buttonIndexes = new List<cls_Button>();
 
         for (int i = 0; i < grid.Count; i++)
         {
@@ -282,9 +339,9 @@ public class scr_GameManager : MonoBehaviour
         int randomButton = Random.Range(0, grid.Count - 3);
         int randomDistance = Random.Range(50, 150);
 
-        steveButtonIndex = randomButton;
+        steveButtonIndex = ((gridSize / 2) * Random.Range(1, gridSize-1)) + Random.Range(-5,5);
         hungryButtonIndex = 0;
-        atillaButtonIndex = grid.Count - 1;
+        atillaButtonIndex = gridSize-1;
 
         //Set the characters
         SetCharacter(enum_Contains.Steve, steveButtonIndex, steveColor);
@@ -301,7 +358,7 @@ public class scr_GameManager : MonoBehaviour
 }
 
 [System.Serializable]
-public class cls_Grid
+public class cls_Button
 {
     public string buttonName;
     public int index;
@@ -310,7 +367,12 @@ public class cls_Grid
     public Vector2 buttonPos;
     public Color buttonColor;
 
-    public cls_Grid(string _buttonName, int _index, GameObject _button, Vector2 _buttonPos, enum_Contains _contains, Color _buttonColor)
+    [Header("Pathfinding Stuff")]
+    public cls_Button parentButton;
+    public cls_Button endNode;
+    public float pathWeight;
+
+    public cls_Button(string _buttonName, int _index, GameObject _button, Vector2 _buttonPos, enum_Contains _contains, Color _buttonColor)
     {
         buttonName = _buttonName;
         index = _index;

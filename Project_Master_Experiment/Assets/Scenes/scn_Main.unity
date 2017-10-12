@@ -1232,6 +1232,8 @@ MonoBehaviour:
   atillaButtonIndex: 0
   musicVolume: 10
   gameOver: 0
+  iteration: 0
+  nextButton: 0
   gameOverScreen: {fileID: 671305700}
   resultText: {fileID: 66128925}
   emptyColor: {r: 1, g: 1, b: 1, a: 1}
