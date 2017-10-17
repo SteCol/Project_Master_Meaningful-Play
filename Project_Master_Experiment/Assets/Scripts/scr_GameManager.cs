@@ -32,6 +32,8 @@ public class scr_GameManager : MonoBehaviour
     public int iteration;
     public int nextButton;
 
+    public List<cls_Button> path;
+
     [Header("UI Stuff")]
     public GameObject gameOverScreen;
     public Text resultText;
@@ -50,9 +52,10 @@ public class scr_GameManager : MonoBehaviour
     #region UI Button Stuff
     public void PlayRadio()
     {
+        ReduceCircle();
+        MoveAtilla();
         MoveAtilla();
         //RemoveRadioBox();
-        ReduceCircle();
     }
 
     public void Restart()
@@ -117,7 +120,6 @@ public class scr_GameManager : MonoBehaviour
             if (distance >= musicVolume)
                 possibleSteveButtonIndex = ClosestButton(possibleSteveButtonIndex, 1.1f, grid[steveButtonIndex].buttonPos);
         }
-
 
         //Get the buttons to color
         foreach (cls_Button g in grid)
@@ -238,47 +240,38 @@ public class scr_GameManager : MonoBehaviour
     //Actual pathfinding a*
     void PathFidning(int _index, float _distance, Vector2 _target)
     {
-        int nextButtonIndex = 0;
 
-        //Reset all the stuff
-        foreach (cls_Button g in grid)
-            g.pathWeight = 0.0f;
+    }
 
-        //Prepare first iteration
-        List<cls_Button> buttonsInRange = GetInRange(grid[_index].buttonPos, _distance);
+    void SetParents(int _index) {
+        foreach (int n in grid[_index].neightbors) {
+            if (path.Count == 0)
+            {
+                if (grid[n].contains == enum_Contains.Atilla)
+                {
+                    SetPath(grid[n]);
+                    break;
+                }
 
-        for (int i = 0; i < buttonsInRange.Count; i++)
-        {
-
+                if (grid[n].parentButton == null)
+                {
+                    grid[n].parentButton = grid[_index];
+                    SetParents(n);
+                }
+            }
+            else {
+                break;
+            }
         }
     }
 
-    public List<cls_Button> FindPath(cls_Button _destination, int _iteration)
-    {
-        //Make a new list of buttons
-        List<cls_Button> path = new List<cls_Button>();
+    void SetPath(cls_Button _button) {
+        print("Found Atilla at " + _button.buttonName);
+        string debug = "";
 
-        //Set the last button
-        cls_Button button = _destination;
+        path.Clear();
 
-        //Get the next button and make this one it's parent
-        List<cls_Button> buttonsInRange = GetInRange(_destination.buttonPos, 1.1f);
-
-        foreach (cls_Button b in buttonsInRange)
-        {
-            path.Add(button);
-            b.parentButton = button;
-        }
-
-        //Make it backwards
-        path.Reverse();
-
-        return path;
-    }
-
-    public void SetWeight(int _index)
-    {
-
+        path.Add(_button.parentButton);
     }
 
     public void MoveAtilla()
@@ -289,17 +282,17 @@ public class scr_GameManager : MonoBehaviour
 
         float moveSpeed = 1.1f;
 
-        //if (usePathFinding)
-        //    moveSpeed = 2.0f;
+        if (usePathFinding)
+            moveSpeed = 2.0f;
 
         int closestButtonIndex = 0;
 
-        if (usePathFinding)
-        {
-            print(FindPath(grid[steveButtonIndex]).Count);
-            closestButtonIndex = FindPath(grid[steveButtonIndex])[1].index;
-        }
-        else
+        //if (usePathFinding)
+        //{
+
+        //    SetParents(steveButtonIndex);
+        //}
+        //else
             closestButtonIndex = ClosestButton(atillaButtonIndex, moveSpeed, grid[steveButtonIndex].buttonPos);
 
         //Clear the old atilla button
@@ -339,7 +332,7 @@ public class scr_GameManager : MonoBehaviour
         int randomButton = Random.Range(0, grid.Count - 3);
         int randomDistance = Random.Range(50, 150);
 
-        steveButtonIndex = ((gridSize / 2) * Random.Range(1, gridSize-1)) + Random.Range(-5,5);
+        steveButtonIndex = (gridSize / 2) + ((Random.Range(1, gridSize -1)) * gridSize) + Random.Range(-5,0);
         hungryButtonIndex = 0;
         atillaButtonIndex = gridSize-1;
 
@@ -368,6 +361,7 @@ public class cls_Button
     public Color buttonColor;
 
     [Header("Pathfinding Stuff")]
+    public List<int> neightbors = new List<int>();
     public cls_Button parentButton;
     public cls_Button endNode;
     public float pathWeight;
@@ -380,6 +374,17 @@ public class cls_Button
         buttonPos = _buttonPos;
         contains = _contains;
         buttonColor = _buttonColor;
+
+        //Generate the neighbors for pathfinding
+            neightbors.Add(index - 1);
+            neightbors.Add(index + 1);
+            neightbors.Add(index - 20);
+            neightbors.Add(index + 20);
+
+
+        for (int i = 0; i < neightbors.Count; i++) 
+            if (neightbors[i] < 0)
+                neightbors.RemoveAt(i);
     }
 
     public void UpdateColor()
